@@ -88,7 +88,8 @@ jobs:
         working-directory: ./ni_measurementlink_generator
 
       - name: Echo Run ID
-        run: echo "Run ID: ${{ matrix.os }}-py${{ matrix.python-version }} ${GITHUB_RUN_ID}"
+        run: |
+            echo "Run ID: ${{ matrix.os }}-py${{ matrix.python-version }} ${GITHUB_RUN_ID}" >> $GITHUB_OUTPUT
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
