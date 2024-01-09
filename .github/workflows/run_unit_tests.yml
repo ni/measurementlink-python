@@ -89,7 +89,7 @@ jobs:
 
       - name: Echo Run ID
         run: |
-            echo "Run ID: ${{ matrix.os }}-py${{ matrix.python-version }} ${GITHUB_RUN_ID}" >> $GITHUB_OUTPUT
+            echo "Run ID: ${{ matrix.os }}-py${{ matrix.python-version }} ${GITHUB_RUN_ID}"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
