@@ -1,11 +1,34 @@
 """Helper classes and functions for MeasurementLink examples."""
 
+import abc
 import logging
 import pathlib
+
+from enum import Enum
 from typing import Any, Callable, TypeVar
 
 import click
+import nidmm
 
+class Function(Enum):
+    """Wrapper enum that contains a zero value."""
+
+    NONE = 0
+    DC_VOLTS = nidmm.Function.DC_VOLTS.value
+    AC_VOLTS = nidmm.Function.AC_VOLTS.value
+    DC_CURRENT = nidmm.Function.DC_CURRENT.value
+    AC_CURRENT = nidmm.Function.AC_CURRENT.value
+    TWO_WIRE_RES = nidmm.Function.TWO_WIRE_RES.value
+    FOUR_WIRE_RES = nidmm.Function.FOUR_WIRE_RES.value
+    FREQ = nidmm.Function.FREQ.value
+    PERIOD = nidmm.Function.PERIOD.value
+    TEMPERATURE = nidmm.Function.TEMPERATURE.value
+    AC_VOLTS_DC_COUPLED = nidmm.Function.AC_VOLTS_DC_COUPLED.value
+    DIODE = nidmm.Function.DIODE.value
+    WAVEFORM_VOLTAGE = nidmm.Function.WAVEFORM_VOLTAGE.value
+    WAVEFORM_CURRENT = nidmm.Function.WAVEFORM_CURRENT.value
+    CAPACITANCE = nidmm.Function.CAPACITANCE.value
+    INDUCTANCE = nidmm.Function.INDUCTANCE.value
 
 class TestStandSupport(object):
     """Class that communicates with TestStand."""
@@ -54,6 +77,14 @@ class TestStandSupport(object):
         if user_canceled:
             raise RuntimeError("File lookup canceled by user.")
         return absolute_path
+    
+
+def configure_measurement_digits(session, measurement_type, range, resolution_digits):
+     if INSTRUMENT_TYPE_VISA_DMM:
+        session.configure_measurement_digits(measurement_type, range, resolution_digits)
+     else:
+        nidmm_function = nidmm.Function(measurement_type.value or Function.DC_VOLTS.value)
+        session.configure_measurement_digits(measurement_type, range, resolution_digits)
 
 
 def configure_logging(verbosity: int) -> None:
@@ -79,3 +110,41 @@ def verbosity_option(func: F) -> F:
         count=True,
         help="Enable verbose logging. Repeat to increase verbosity.",
     )(func)
+
+# HAL Implementation starts here...
+class HALSessionManager():
+    pass
+
+class DmmHAL(abc.ABC):
+    @abc.abstractmethod
+    def initialise(resource_name: str):
+        pass
+
+    @abc.abstractmethod
+    def configure():
+        pass
+
+    @abc.abstractmethod
+    def read():
+        pass
+
+
+class DmmHALNI(DmmHAL):
+    def initialise(resource_name: str):
+        pass
+
+    def configure():
+        pass
+
+    def read():
+        pass
+
+class DmmHALVISA(DmmHAL):
+    def initialise(resource_name: str):
+        pass
+
+    def configure():
+        pass
+
+    def read():
+        pass

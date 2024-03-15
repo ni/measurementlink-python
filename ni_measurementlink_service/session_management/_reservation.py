@@ -893,7 +893,11 @@ class BaseReservation(_BaseSessionContainer):
     def initialize_session(
         self,
         session_constructor: Callable[[SessionInformation], TSession],
+        #measurement_service: nims.MeasurementService,
         instrument_type_id: str,
+        # reset_device: bool = False,
+        # options: Optional[Dict[str, Any]] = None,
+        # initialization_behavior: SessionInitializationBehavior = SessionInitializationBehavior.AUTO,
     ) -> ContextManager[TypedSessionInformation[TSession]]:
         """Initialize a single instrument session.
 
@@ -917,6 +921,21 @@ class BaseReservation(_BaseSessionContainer):
                 match the instrument type ID, or too many reserved sessions
                 match the instrument type ID.
         """
+        from ni_measurementlink_service._drivers._nidmm import SessionConstructor
+        import pathlib
+        from decouple import AutoConfig
+
+        # if VISA DMM
+        # config = AutoConfig(str(pathlib.Path.cwd()))
+        # session_constructor = VisaDmmSessionConstructor(config, measurement_service.discovery_client)
+        session_constructor = SessionConstructor(
+            self._discovery_client,
+            self._grpc_channel_pool,
+            reset_device,
+            options,
+            initialization_behavior,
+        )
+
         return self._initialize_session_core(session_constructor, instrument_type_id)
 
     @requires_feature(MULTIPLEXER_SUPPORT_2024Q2)
