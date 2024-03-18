@@ -1,6 +1,6 @@
 
+import contextlib
 from enum import Enum
-from dmm_hal.dmm import Dmm
 import nidmm
 
 
@@ -25,12 +25,14 @@ class Function(Enum):
     INDUCTANCE = nidmm.Function.INDUCTANCE.value
 
     
-class DmmNi(Dmm):
+class DmmNi():
     """NI DMM Implementation"""
-    def __init__(self, resource: str):
+    @contextlib.contextmanager
+    def initialize(self, reservation_obj):
         """Constructor to create NI DMM reference"""
-        self._session = nidmm.Session(resource)
-    
+        with reservation_obj.initialize_nidmm_session() as session_info:
+            self._session = session_info.session
+            yield self._session
 
     def configure_measurement_digits(self, measurement_function, range, resolution_digits):
         """Configures the common properties of the measurement. 

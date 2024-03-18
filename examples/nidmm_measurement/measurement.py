@@ -1,14 +1,13 @@
 """Perform a measurement using an NI DMM."""
 
 import logging
-import math
 import pathlib
 import sys
 from enum import Enum
 from typing import Tuple
 
 import click
-from dmm_hal.dmm_ni import DmmNi
+from dmm_hal.dmm import Dmm
 import ni_measurementlink_service as nims
 import nidmm
 from _helpers import configure_logging, verbosity_option
@@ -56,6 +55,8 @@ class Function(Enum):
 @measurement_service.configuration("range", nims.DataType.Double, 10.0)
 @measurement_service.configuration("resolution_digits", nims.DataType.Double, 5.5)
 @measurement_service.output("measured_value", nims.DataType.Double)
+@measurement_service.output("signal_out_of_range", nims.DataType.Boolean)
+@measurement_service.output("absolute_resolution", nims.DataType.Double)
 def measure(
     pin_name: str,
     measurement_type: Function,
@@ -69,13 +70,13 @@ def measure(
         measurement_type,
         range,
         resolution_digits,
-    )
+    )    
 
-    with measurement_service.context.reserve_session(pin_name) as reservation:
-        with reservation.initialize_nidmm_session() as session_info:
-            dmm = DmmNi(session_info.resource_name)
-            dmm.configure_measurement_digits(measurement_type, range, resolution_digits)
-            measured_value = dmm.read()
+    with Dmm.session_manager(measurement_service=measurement_service, pin_name=pin_name) as (dmm_hal, reservation_obj):
+        with dmm_hal.initialize(reservation_obj) as _:
+            dmm_hal.configure_measurement_digits(measurement_type, range, resolution_digits)
+            measured_value = dmm_hal.read()
+
 
     logging.info(
         "Completed measurement: measured_value=%g signal_out_of_range=%s absolute_resolution=%g",
