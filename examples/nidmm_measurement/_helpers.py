@@ -5,7 +5,6 @@ import pathlib
 from typing import Any, Callable, TypeVar
 
 import click
-import nidmm
 
 
 class TestStandSupport(object):

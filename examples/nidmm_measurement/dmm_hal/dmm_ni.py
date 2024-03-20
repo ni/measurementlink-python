@@ -1,4 +1,3 @@
-
 import contextlib
 from enum import Enum
 import nidmm
@@ -27,12 +26,13 @@ class Function(Enum):
     
 class DmmNi():
     """NI DMM Implementation"""
+
     @contextlib.contextmanager
-    def initialize(self, reservation_obj):
-        """Constructor to create NI DMM reference"""
-        with reservation_obj.initialize_nidmm_session() as session_info:
-            self._session = session_info.session
-            yield self._session
+    def initialize(self, reservation):        
+        with reservation.initialize_nidmm_session() as session_info:
+            self.session = session_info.session
+            yield self.session
+
 
     def configure_measurement_digits(self, measurement_function, range, resolution_digits):
         """Configures the common properties of the measurement. 
@@ -40,9 +40,9 @@ class DmmNi():
         These properties include method, range, and resolution_digits.
         """
         nidmm_function = nidmm.Function(measurement_function.value or Function.DC_VOLTS.value)
-        self._session.configure_measurement_digits(nidmm_function, range, resolution_digits)
+        self.session.configure_measurement_digits(nidmm_function, range, resolution_digits)
 
    
     def read(self):
         """Acquires a single measurement and returns the measured value."""
-        self._session.read()
+        self.session.read()

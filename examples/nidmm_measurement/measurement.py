@@ -72,10 +72,9 @@ def measure(
         resolution_digits,
     )    
 
-    with Dmm.session_manager(measurement_service=measurement_service, pin_name=pin_name) as (dmm_hal, reservation_obj):
-        with dmm_hal.initialize(reservation_obj) as _:
-            dmm_hal.configure_measurement_digits(measurement_type, range, resolution_digits)
-            measured_value = dmm_hal.read()
+    with Dmm.initialize(measurement_service=measurement_service, pin_name=pin_name) as dmm:
+        dmm.configure_measurement_digits(measurement_type, range, resolution_digits)
+        measured_value = dmm.read()
 
 
     logging.info(
