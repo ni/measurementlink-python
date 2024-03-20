@@ -45,4 +45,4 @@ class DmmNi():
    
     def read(self):
         """Acquires a single measurement and returns the measured value."""
-        self.session.read()
+        return self.session.read()
