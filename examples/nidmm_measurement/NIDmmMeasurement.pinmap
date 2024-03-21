@@ -2,6 +2,9 @@
 <PinMap xmlns="http://www.ni.com/TestStand/SemiconductorModule/PinMap.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="1.1">
 	<Instruments>
 		<NIDmmInstrument name="DMM1" />
+		<Instrument name="GPIB0::3::INSTR" instrumentTypeId="VisaDmm">
+			<Channel id="0" />
+		</Instrument>
 	</Instruments>
 	<Pins>
 		<DUTPin name="Pin1" />

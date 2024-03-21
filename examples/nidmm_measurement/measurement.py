@@ -47,7 +47,6 @@ class Function(Enum):
     "pin_name",
     nims.DataType.Pin,
     "Pin1",
-    instrument_type=nims.session_management.INSTRUMENT_TYPE_NI_DMM,
 )
 @measurement_service.configuration(
     "measurement_type", nims.DataType.Enum, Function.DC_VOLTS, enum_type=Function

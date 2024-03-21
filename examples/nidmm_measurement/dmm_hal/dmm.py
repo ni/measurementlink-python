@@ -25,5 +25,5 @@ class Dmm():
     def initialize(measurement_service: nims.MeasurementService, pin_name: str):
         with measurement_service.context.reserve_session(pin_name) as reservation:
             dmm_hal_obj = DmmHal(reservation.session_info.instrument_type_id)
-            with dmm_hal_obj.initialize(reservation) as _:
+            with dmm_hal_obj.initialize(reservation, measurement_service) as _:
                 yield dmm_hal_obj

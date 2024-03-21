@@ -28,7 +28,7 @@ class DmmNi():
     """NI DMM Implementation"""
 
     @contextlib.contextmanager
-    def initialize(self, reservation):        
+    def initialize(self, reservation, measurement_service):        
         with reservation.initialize_nidmm_session() as session_info:
             self.session = session_info.session
             yield self.session
