@@ -7,6 +7,7 @@ import pathlib
 import sys
 import threading
 import time
+from contextlib import ExitStack
 from typing import TYPE_CHECKING, Iterable, List, NamedTuple, Tuple
 
 import click
@@ -77,43 +78,47 @@ def measure(
     cancellation_event = threading.Event()
     measurement_service.context.add_cancel_callback(cancellation_event.set)
 
-    with measurement_service.context.reserve_session(pin_names) as reservation:
-        with reservation.initialize_nidcpower_session() as session_info:
+    with measurement_service.context.reserve_sessions(pin_names) as reservation:
+        with reservation.initialize_nidcpower_sessions():
             # Use connections to map pin names to channel names. This sets the
             # channel order based on the pin order and allows mapping the
             # resulting measurements back to the corresponding pins and sites.
             connections = reservation.get_nidcpower_connections(pin_names)
-            channel_order = ",".join(connection.channel_name for connection in connections)
-            channels = session_info.session.channels[channel_order]
 
             # Configure the same settings for all of the channels corresponding
             # to the selected pins and sites.
-            channels.source_mode = nidcpower.SourceMode.SINGLE_POINT
-            channels.output_function = nidcpower.OutputFunction.DC_VOLTAGE
-            channels.current_limit = current_limit
-            channels.voltage_level_range = voltage_level_range
-            channels.current_limit_range = current_limit_range
-            channels.source_delay = hightime.timedelta(seconds=source_delay)
-            channels.voltage_level = voltage_level
+            for connection in connections:
+                channel = connection.session.channels[connection.channel_name]
+                channel.source_mode = nidcpower.SourceMode.SINGLE_POINT
+                channel.output_function = nidcpower.OutputFunction.DC_VOLTAGE
+                channel.current_limit = current_limit
+                channel.voltage_level_range = voltage_level_range
+                channel.current_limit_range = current_limit_range
+                channel.source_delay = hightime.timedelta(seconds=source_delay)
+                channel.voltage_level = voltage_level
 
             # Initiate the channels to start sourcing the outputs. initiate()
             # returns a context manager that aborts the measurement when the
             # function returns or raises an exception.
-            with channels.initiate():
-                # Wait for the outputs to settle.
-                timeout = source_delay + 10.0
-                _wait_for_event(
-                    channels, cancellation_event, nidcpower.enums.Event.SOURCE_COMPLETE, timeout
-                )
-
-                # Measure the voltage and current for each output.
-                measurements: List[_Measurement] = channels.measure_multiple()
-
-                # Determine whether the outputs are in compliance.
-                for index, connection in enumerate(connections):
+            with ExitStack() as stack:
+                for connection in connections:
                     channel = connection.session.channels[connection.channel_name]
+                    stack.enter_context(channel.initiate())
+
+                for connection in connections:
+                    channel = connection.session.channels[connection.channel_name]
+                    timeout = source_delay + 10.0
+                    _wait_for_event(
+                        channel, cancellation_event, nidcpower.enums.Event.SOURCE_COMPLETE, timeout
+                    )
+                # Measure the voltage and current for each output.
+                measurements: List[_Measurement] = []
+                for connection in connections:
+                    channel = connection.session.channels[connection.channel_name]
+                    measurement: _Measurement = channel.measure_multiple()[0]
                     in_compliance = channel.query_in_compliance()
-                    measurements[index] = measurements[index]._replace(in_compliance=in_compliance)
+                    measurement = measurement._replace(in_compliance=in_compliance)
+                    measurements.append(measurement)
 
     _log_measurements(connections, measurements)
     logging.info("Completed measurement")
