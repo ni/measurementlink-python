@@ -1,0 +1,19 @@
+{
+  "services": [
+    {
+      "displayName": "FalMeasurement",
+      "serviceClass": "FalMeasurement_Python",
+      "descriptionUrl": "",
+      "providedInterfaces": [
+        "ni.measurementlink.measurement.v1.MeasurementService",
+        "ni.measurementlink.measurement.v2.MeasurementService"
+      ],
+      "path": "start.bat",
+      "annotations": {
+        "ni/service.description": "",
+        "ni/service.collection": "",
+        "ni/service.tags": []
+      }
+    }
+  ]
+}
