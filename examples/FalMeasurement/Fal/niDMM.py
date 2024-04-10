@@ -29,7 +29,7 @@ class Function(Enum):
     INDUCTANCE = nidmm.Function.INDUCTANCE.value
 
 
-class DmmNI():
+class niDMM():
     """NI DMM Implementation"""
 
     @contextlib.contextmanager

@@ -1,20 +1,17 @@
 """Base class to reserve pins and create instrument object"""
 
 import contextlib
+import importlib
 import ni_measurementlink_service as nims
 
 
-def InstrumentFal(instrument_type_id: str):
-    """Create object based on the instrument type id."""    
-    from Fal.DCPowerNI import DCPowerNI
-    from Fal.DmmNI import DmmNI
-
-    instrument = {
-        "niDCPower": DCPowerNI,
-        "niDMM": DmmNI,
-    }
-
-    return instrument[instrument_type_id]()
+def _get_instrument(instrument_type):
+    try:
+        driver_module_path = f"Fal.{instrument_type}"
+        driver_module = importlib.import_module(driver_module_path)
+        return getattr(driver_module, instrument_type)
+    except ImportError:
+        raise ValueError(f"No driver found for instrument type '{instrument_type}'")
 
 
 class Instrument():
@@ -23,6 +20,6 @@ class Instrument():
     @contextlib.contextmanager
     def initialize(measurement_service: nims.MeasurementService, pin_name: str):
         with measurement_service.context.reserve_session(pin_name) as reservation:
-            instrument_obj = InstrumentFal(reservation.session_info.instrument_type_id)
+            instrument_obj = _get_instrument(reservation.session_info.instrument_type_id)()
             with instrument_obj.initialize(reservation, measurement_service) as _:
                 yield instrument_obj

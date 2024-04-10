@@ -27,7 +27,7 @@ class _Measurement(NamedTuple):
     channel: str
 
 
-class DCPowerNI():
+class niDCPower():
     """NI DCPOWER Implementation"""
 
     @contextlib.contextmanager
