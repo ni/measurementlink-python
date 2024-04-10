@@ -1,4 +1,3 @@
-import contextlib
 import grpc
 import nidcpower
 import threading
@@ -6,10 +5,7 @@ import time
 
 from typing import List, NamedTuple
 from contextlib import ExitStack
-import ni_measurementlink_service as nims
-from ni_measurementlink_service.session_management import (
-    SingleSessionReservation,
-)
+from Fal.InstrumentBase import InstrumentBase
 
 
 _NIDCPOWER_WAIT_FOR_EVENT_TIMEOUT_ERROR_CODE = -1074116059
@@ -27,25 +23,14 @@ class _Measurement(NamedTuple):
     channel: str
 
 
-class niDCPower():
+class niDCPower(InstrumentBase):
     """NI DCPOWER Implementation"""
-
-    @contextlib.contextmanager
-    def initialize(
-        self, reservation: SingleSessionReservation, measurement_service: nims.MeasurementService
-    ):
-        self.measurement_service = measurement_service
-        with reservation.initialize_nidcpower_session() as session_info:
-            self.session_info = session_info
-            yield self.session_info
-
 
     def configure(self, measurement_function, voltage_level, resolution_digits):
         channels = self.session_info.session.channels[self.session_info.channel_list]
         channels.source_mode = nidcpower.SourceMode.SINGLE_POINT
         channels.output_function = nidcpower.OutputFunction.DC_VOLTAGE
         channels.voltage_level = voltage_level
-
 
     def measure(self):
         with ExitStack() as stack:

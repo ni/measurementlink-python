@@ -21,5 +21,5 @@ class Instrument():
     def initialize(measurement_service: nims.MeasurementService, pin_name: str):
         with measurement_service.context.reserve_session(pin_name) as reservation:
             instrument_obj = _get_instrument(reservation.session_info.instrument_type_id)()
-            with instrument_obj.initialize(reservation, measurement_service) as _:
+            with instrument_obj.initialize_session(measurement_service, reservation, reservation.session_info.instrument_type_id) as _:
                 yield instrument_obj

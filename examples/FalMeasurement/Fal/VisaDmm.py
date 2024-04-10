@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import pathlib
 
 import ni_measurementlink_service as nims
@@ -12,8 +11,8 @@ from ni_measurementlink_service.discovery import DiscoveryClient
 from ni_measurementlink_service.session_management import (
     SessionInformation,
     SessionInitializationBehavior,
-    SingleSessionReservation,
 )
+from Fal.InstrumentBase import InstrumentBase
 
 import sys
 from enum import Enum
@@ -83,39 +82,31 @@ _config = AutoConfig(str(pathlib.Path.cwd()))
 _logger = logging.getLogger(__name__)
 
 
-class VisaDmm():
+class VisaDmm(InstrumentBase):
     """An NI-VISA DMM Implementation."""
-    @contextlib.contextmanager
-    def initialize(self, reservation : SingleSessionReservation, measurement_service: nims.MeasurementService):
-        """Initialize a single NI-VISA DMM instrument session."""
-        session_constructor = VisaDmmSessionConstructor(_config, measurement_service.discovery_client)
-
-        with reservation.initialize_session(
-            session_constructor, INSTRUMENT_TYPE_VISA_DMM
-        ) as session_info:            
-            self._session = session_info.session
-            yield self._session
-
 
     def configure(self, measurement_function, range, resolution_digits):
         visa_dmm_function = Function(measurement_function.value)
-        self._session.configure_measurement_digits(visa_dmm_function, range, resolution_digits)
+        self.session_info.session.configure_measurement_digits(
+            visa_dmm_function, range, resolution_digits
+        )
 
-   
     def measure(self):
-        return self._session.read()
+        return self.session_info.session.read()
 
 
-class VisaDmmSessionConstructor:
+class VisaDmmConstructor:
     """MeasurementLink session constructor for VISA DMM sessions."""
 
     def __init__(
         self,
-        config: AutoConfig,
-        discovery_client: DiscoveryClient,
+        measurement_service: nims.MeasurementService,
         initialization_behavior: SessionInitializationBehavior = SessionInitializationBehavior.AUTO,
     ) -> None:
         """Construct a VisaDmmSessionConstructor."""
+        config = _config
+        discovery_client = measurement_service._discovery_client
+
         self._config = config
         self._discovery_client = discovery_client
         self._initialization_behavior = initialization_behavior

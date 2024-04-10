@@ -1,11 +1,7 @@
-import contextlib
 from enum import Enum
 import nidmm
 
-import ni_measurementlink_service as nims
-from ni_measurementlink_service.session_management import (
-    SingleSessionReservation,
-)
+from Fal.InstrumentBase import InstrumentBase
 
 
 class Function(Enum):
@@ -29,22 +25,14 @@ class Function(Enum):
     INDUCTANCE = nidmm.Function.INDUCTANCE.value
 
 
-class niDMM():
+class niDMM(InstrumentBase):
     """NI DMM Implementation"""
-
-    @contextlib.contextmanager
-    def initialize(
-        self, reservation: SingleSessionReservation, measurement_service: nims.MeasurementService
-    ):
-        with reservation.initialize_nidmm_session() as session_info:
-            self.session = session_info.session
-            yield self.session
-
 
     def configure(self, measurement_function, range, resolution_digits):
         nidmm_function = nidmm.Function(measurement_function.value or Function.DC_VOLTS.value)
-        self.session.configure_measurement_digits(nidmm_function, range, resolution_digits)
-
+        self.session_info.session.configure_measurement_digits(
+            nidmm_function, range, resolution_digits
+        )
 
     def measure(self):
-        return self.session.read()
+        return self.session_info.session.read()
