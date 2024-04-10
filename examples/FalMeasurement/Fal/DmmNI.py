@@ -2,6 +2,11 @@ import contextlib
 from enum import Enum
 import nidmm
 
+import ni_measurementlink_service as nims
+from ni_measurementlink_service.session_management import (
+    SingleSessionReservation,
+)
+
 
 class Function(Enum):
     """Wrapper enum that contains a zero value."""
@@ -23,22 +28,23 @@ class Function(Enum):
     CAPACITANCE = nidmm.Function.CAPACITANCE.value
     INDUCTANCE = nidmm.Function.INDUCTANCE.value
 
-    
+
 class DmmNI():
     """NI DMM Implementation"""
 
     @contextlib.contextmanager
-    def initialize(self, reservation, measurement_service):        
+    def initialize(
+        self, reservation: SingleSessionReservation, measurement_service: nims.MeasurementService
+    ):
         with reservation.initialize_nidmm_session() as session_info:
             self.session = session_info.session
             yield self.session
 
 
-    def measure_dc_voltage(self, measurement_function, range, resolution_digits):
-        """Configures the common properties of the measurement. 
-        
-        These properties include method, range, and resolution_digits.
-        """
+    def configure(self, measurement_function, range, resolution_digits):
         nidmm_function = nidmm.Function(measurement_function.value or Function.DC_VOLTS.value)
         self.session.configure_measurement_digits(nidmm_function, range, resolution_digits)
+
+
+    def measure(self):
         return self.session.read()

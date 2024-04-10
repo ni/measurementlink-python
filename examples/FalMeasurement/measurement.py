@@ -55,8 +55,8 @@ def measure(
     resolution_digits: float,
 ) -> float:
     with Instrument.initialize(measurement_service=measurement_service, pin_name=pin_name) as instrument:
-        measured_value = instrument.measure_dc_voltage(measurement_type, range, resolution_digits)
-
+        instrument.configure(measurement_type, range, resolution_digits)
+        measured_value = instrument.measure()
     return (measured_value,)
 
 

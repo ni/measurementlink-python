@@ -11,7 +11,7 @@ from ni_measurementlink_service.session_management import (
     SingleSessionReservation,
 )
 
-    
+
 _NIDCPOWER_WAIT_FOR_EVENT_TIMEOUT_ERROR_CODE = -1074116059
 _NIDCPOWER_TIMEOUT_EXCEEDED_ERROR_CODE = -1074097933
 _NIDCPOWER_TIMEOUT_ERROR_CODES = [
@@ -31,41 +31,34 @@ class DCPowerNI():
     """NI DCPOWER Implementation"""
 
     @contextlib.contextmanager
-    def initialize(self, reservation : SingleSessionReservation, measurement_service : nims.MeasurementService):    
+    def initialize(
+        self, reservation: SingleSessionReservation, measurement_service: nims.MeasurementService
+    ):
         self.measurement_service = measurement_service
         with reservation.initialize_nidcpower_session() as session_info:
             self.session_info = session_info
             yield self.session_info
 
 
-    def measure_dc_voltage(self, measurement_function, range, resolution_digits):
-        """Configures the common properties of the measurement. 
-        
-        These properties include method, range, and resolution_digits.
-        """
+    def configure(self, measurement_function, voltage_level, resolution_digits):
         channels = self.session_info.session.channels[self.session_info.channel_list]
         channels.source_mode = nidcpower.SourceMode.SINGLE_POINT
         channels.output_function = nidcpower.OutputFunction.DC_VOLTAGE
-        channels.voltage_level = range
+        channels.voltage_level = voltage_level
 
+
+    def measure(self):
         with ExitStack() as stack:
             channels = self.session_info.session.channels[self.session_info.channel_list]
             stack.enter_context(channels.initiate())
 
-            # Wait for the outputs to settle.
-            channels = self.session_info.session.channels[self.session_info.channel_list]
-            timeout = 10.0
-            cancellation_event = threading.Event()
-
             self._wait_for_event(
-                channels, cancellation_event, nidcpower.enums.Event.SOURCE_COMPLETE, timeout
+                channels, threading.Event(), nidcpower.enums.Event.SOURCE_COMPLETE, 10.0
             )
 
-            channels = self.session_info.session.channels[self.session_info.channel_list]
             session_measurements: List[_Measurement] = channels.measure_multiple()
             return session_measurements[0].voltage
-    
-        
+
     def _wait_for_event(
         self,
         channels: nidcpower.session._SessionBase,
@@ -89,9 +82,6 @@ class DCPowerNI():
                     grpc.StatusCode.CANCELLED, "Client requested cancellation."
                 )
 
-            # Wait for the NI-DCPower event. If this takes more than 100 ms, check
-            # whether the measurement was canceled and try again. NI-DCPower does
-            # not support canceling a call to wait_for_event().
             try:
                 channels.wait_for_event(event_id, timeout=100e-3)
                 break
