@@ -5,10 +5,14 @@
 			<ChannelGroup name="CommonDCPowerChannelGroup" />
 		</NIDCPowerInstrument>
 		<NIDmmInstrument name="DMM1" />
+		<Instrument name="GPIB0::3::INSTR" instrumentTypeId="VisaDmm">
+			<Channel id="0" />
+		</Instrument>
 	</Instruments>
 	<Pins>
 		<DUTPin name="Pin1" />
 		<DUTPin name="Pin2" />
+		<DUTPin name="Pin3" />
 	</Pins>
 	<PinGroups></PinGroups>
 	<Sites>
@@ -17,5 +21,6 @@
 	<Connections>
 		<Connection pin="Pin1" siteNumber="0" instrument="DCPower1" channel="0" />
 		<Connection pin="Pin2" siteNumber="0" instrument="DMM1" channel="0" />
+		<Connection pin="Pin3" siteNumber="0" instrument="GPIB0::3::INSTR" channel="0" />
 	</Connections>
 </PinMap>
