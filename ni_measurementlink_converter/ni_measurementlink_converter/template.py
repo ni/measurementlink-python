@@ -48,51 +48,68 @@ def _logging(verbose:bool):
     logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=level)
 
 
-def _get_input_configurations(params):
-    extracted_params = {}
-    for param in params:
-        parts = param.split(':')
-        if len(parts) != 2:
-            raise click.BadParameter(f"Invalid parameter format: {param}. Please use the format 'name:type'")
-        name, param_type = parts
-        if param_type == 'int':
-            extracted_params[name] = 'nims.DataType.Int32'
-        elif param_type == 'bool':
-            extracted_params[name] = 'nims.DataType.Boolean'
-        elif param_type == 'float':
-            extracted_params[name] = 'nims.DataType.Double'
-        elif param_type == 'List[float]':
-            extracted_params[name] = 'nims.DataType.FloatArray1D'
-        elif param_type == 'List[bool]':
-            extracted_params[name] = 'nims.DataType.DoubleArray1D'
-        else:
-            raise click.BadParameter("Invalid parameter")
-    return extracted_params
+def _to_nims_type(type):
+    if type == 'int':
+        return 'nims.DataType.Int32'
+    elif type == 'bool':
+        return 'nims.DataType.Boolean'
+    elif type == 'float':
+        return 'nims.DataType.Double'
+    elif type == 'List[float]':
+        return 'nims.DataType.FloatArray1D'
+    elif type == 'List[bool]':
+        return 'nims.DataType.DoubleArray1D'
+    else:
+        raise click.BadParameter("Invalid parameter")
 
 
-def _get_instrument(instrument_type):
+def _get_nims_instrument(instrument_type):
     if instrument_type == "nidcpower":
         return 'nims.session_management.INSTRUMENT_TYPE_NI_DCPOWER'
     else:
         raise click.BadParameter(f"Invalid instrument")
     
 
+def _extract_inputs(inputs):
+    input_data = []
+    for input_param in inputs:
+        name, input_type, default_value = input_param.split(':')
+        input_type = _to_nims_type(input_type)
+        input_data.append({'name': name, 'type': input_type, 'default_value': default_value})
+
+    return input_data
+    
+
+def _extract_outputs(outputs):
+    output_data = []
+    for output_param in outputs:
+        name, output_type = output_param.split(':')
+        output_type = _to_nims_type(output_type)
+        output_data.append({'name': name, 'type': output_type})
+
+    return output_data
+
+
 def _generate_method_signature(inputs):
-    signature = ", ".join(inputs)
-    return signature
+    parameter_info = []
+    for input_param in inputs:
+        name, input_type, _ = input_param.split(':')
+        parameter_info.append(f"{name}:{input_type}")
+
+    return ", ".join(parameter_info)
 
 
-def _get_parameter_string(inputs):
+def _get_input_names(inputs):
     parameter_names = [param.split(":")[0] for param in inputs]
     return ", ".join(parameter_names)
 
 
-def _get_all_types(inputs):
-    all_types = []
-    for param in inputs:
+def _get_ouput_types(outputs):
+    parameter_types = []
+    for param in outputs:
         param_type = param.split(":")[1]
-        all_types.append(param_type)
-    return ", ".join(all_types)
+        parameter_types.append(param_type)
+    return ", ".join(parameter_types)
     
 
 @click.command()
@@ -128,14 +145,15 @@ def convert_measurement(
 ) -> None:
     _logging(True)
 
-    input_configurations = _get_input_configurations(inputs)
-    output_configurations = _get_input_configurations(outputs)
+    nims_instrument = _get_nims_instrument(instrument_type)
 
-    instrument = _get_instrument(instrument_type)
+    input_configurations = _extract_inputs(inputs)
+    output_configurations = _extract_outputs(outputs)
+
     input_signature = _generate_method_signature(inputs)
-    input_param_names = _get_parameter_string(inputs)
+    input_param_names = _get_input_names(inputs)
 
-    output_param_types = _get_all_types(outputs)
+    output_param_types = _get_ouput_types(outputs)
 
     service_class = f"{display_name}_Python"
     display_name_for_filenames = re.sub(r"\s+", "", display_name)
@@ -144,8 +162,8 @@ def convert_measurement(
     directory_out_path.mkdir(exist_ok=True, parents=True)
     measurement_version = 1.0
 
-    source_file = "C:\\Users\\avinash.suresh\\Desktop\\Py utility\\Measurements\\Step2_Wrap.py"
-    new_name = 'Meas.py'
+    source_file = "C:\\Users\\avinash.suresh\\Desktop\\Py utility\\Measurements\\dcpower_measurement.py"
+    new_name = 'OldMeasurement.py'
     shutil.copy(str(source_file), str(directory_out_path) + str('\\') + new_name)
 
     _create_file(
@@ -158,7 +176,7 @@ def convert_measurement(
         serviceconfig_file=serviceconfig_file,
         resource_name=resource_name,
         instrument_type=instrument_type,
-        instrument=instrument,
+        nims_instrument=nims_instrument,
         input_configurations=input_configurations,
         output_configurations=output_configurations,
         input_signature = input_signature,

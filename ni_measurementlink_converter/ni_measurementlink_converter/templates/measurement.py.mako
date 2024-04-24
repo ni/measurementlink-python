@@ -1,4 +1,4 @@
-<%page args="display_name, version, service_class, serviceconfig_file,resource_name,instrument_type,instrument,input_configurations,output_configurations,input_signature,input_param_names,output_param_types"/>\
+<%page args="display_name, version, service_class, serviceconfig_file,resource_name,instrument_type,nims_instrument,input_configurations,output_configurations,input_signature,input_param_names,output_param_types"/>\
 \
 """A default measurement with an array in and out."""
 
@@ -7,7 +7,7 @@ import pathlib
 import sys
 from typing import List, Tuple, Iterable
 import ${instrument_type}
-from Meas import measurement
+from OldMeasurement import measurement
 
 import click
 import ni_measurementlink_service as nims
@@ -24,17 +24,17 @@ measurement_service = nims.MeasurementService(
 @measurement_service.register_measurement
 @measurement_service.configuration(
     "pin_names",
-    nims.DataType.IOResourceArray1D,
+    nims.DataType.PinArray1D,
     ["${resource_name}"],
-    instrument_type=${instrument},
+    instrument_type=${nims_instrument},
 )
-    %for name, nims_type in input_configurations.items():
-@measurement_service.configuration("${name}", ${nims_type})
+    %for input_config in input_configurations:
+@measurement_service.configuration("${input_config['name']}", ${input_config['type']}, ${input_config['default_value']})
     %endfor
-    %for name, nims_type in output_configurations.items():
-@measurement_service.output("${name}", ${nims_type})
+    %for output_config in output_configurations:
+@measurement_service.output("${output_config['name']}", ${output_config['type']})
     %endfor
-def measure(pin_names: Iterable[str],${input_signature}) -> Tuple[${output_param_types}]:
+def measure(pin_names: Iterable[str], ${input_signature}) -> Tuple[${output_param_types}]:
     with measurement_service.context.reserve_session(pin_names) as reservation:
         with reservation.initialize_${instrument_type}_session() as session_info:
             return measurement(session_info.session, ${input_param_names})
