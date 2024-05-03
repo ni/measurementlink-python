@@ -25,6 +25,8 @@ The HAL library implementation is placed in `dmm_hal` folder which involves the 
 
 ## Measurement creation with Hardware Abstraction
 
+![DMM HAL](DMM%20Hal%20hierarchy.png)
+
 ### Steps to create new instrument model with the help of existing HAL libraries
 
 Consider the need to create a generic measurement for an `NI DMM` and `VISA DMM` instrument to acquire a single DC voltage. The following workflow will assist in integrating the new DMM instrument model:
