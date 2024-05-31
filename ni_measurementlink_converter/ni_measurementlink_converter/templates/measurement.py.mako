@@ -1,4 +1,4 @@
-<%page args="display_name, version, service_class, serviceconfig_file,resource_name,instrument_type,nims_instrument,input_configurations,output_configurations,input_signature,input_param_names,output_param_types"/>\
+<%page args="display_name, version, service_class, serviceconfig_file,resource_name,instrument_type,nims_instrument,input_configurations,output_configurations,input_signature,input_param_names,output_param_types,updated_file_name,method_name"/>\
 \
 """A default measurement with an array in and out."""
 
@@ -7,7 +7,7 @@ import pathlib
 import sys
 from typing import List, Tuple, Iterable
 import ${instrument_type}
-from OldMeasurement import measurement
+from ${updated_file_name} import ${method_name}
 
 import click
 import ni_measurementlink_service as nims
@@ -36,8 +36,7 @@ measurement_service = nims.MeasurementService(
     %endfor
 def measure(pin_names: Iterable[str], ${input_signature}) -> Tuple[${output_param_types}]:
     with measurement_service.context.reserve_session(pin_names) as reservation:
-        with reservation.initialize_${instrument_type}_session() as session_info:
-            return measurement(session_info.session, ${input_param_names})
+        return ${method_name}(reservation, ${input_param_names})
 
 
 def main() -> None:
